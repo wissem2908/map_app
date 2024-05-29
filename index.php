@@ -41,6 +41,18 @@
         border-color: blue;
         background-color: #f0f8ff; /* optional: change background color for better visibility */
     }
+    #species {
+            background: pink;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start; /* Adjust alignment as needed */
+        }
+        #categories {
+            background: lightblue;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start; /* Adjust alignment as needed */
+        }
     .category.over {
         border-color: blue;
     }
@@ -63,7 +75,7 @@
                     <h5>Categories</h5>
                     <div id="categories" class="mb-4"></div>
                     <h5>Species</h5>
-                    <div id="species"></div>
+                    <div id="species" ></div>
                 </div>
             </div>
         </div>
@@ -162,6 +174,18 @@ function loadSpecies() {
                     $(".species").draggable({
                 revert: true
             });
+
+            /*************************************** */
+            $("#species").droppable({
+        accept: ".species",
+        drop: function(event, ui) {
+            var $species = ui.draggable;
+            $species.appendTo("#species").css({ top: 0, left: 0 }); // Put it back in #species
+            var classId = $species.data('class-id');
+            var $category = $('div[data-category] div[data-class-id="' + classId + '"]').parent(); // Find its current category
+            $category.append($species); // Remove it from the category
+        }
+    });
         // Add click event to species
         $('#species').on('click', '.species', function() {
 
@@ -178,6 +202,15 @@ function loadSpecies() {
                     selectedSpecies.push(classId);
                 }
         });
+
+            // Add double-click event to species to remove from category
+    $(".species").dblclick(function() {
+        var $species = $(this);
+        $species.appendTo("#species").css({ top: 0, left: 0 }); // Put it back in #species
+        var classId = $species.data('class-id');
+        var $category = $('div[data-category] div[data-class-id="' + classId + '"]').parent(); // Find its current category
+        $category.append($species); // Remove it from the category
+    });
     });
 }
 

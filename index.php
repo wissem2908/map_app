@@ -37,6 +37,10 @@
     .species .drag-icon {
         margin-right: 10px;
     }
+    .species.selected {
+        border-color: blue;
+        background-color: #f0f8ff; /* optional: change background color for better visibility */
+    }
     .category.over {
         border-color: blue;
     }
@@ -109,15 +113,17 @@ $(document).ready(function () {
 
 /************************************************************************************************ */
 //Fetch categories and species data from the server
+var selectedSpecies = [];
+
 function loadCategories() {
-        $.get('https://providence.listentothedeep.com/local/get_categories.php', function (data) {
-            var categories = data.categories;
-            categories.forEach(function (category) {
-                $('#categories').append('<div class="category" data-category="' + category[0] + '">' +
-                    '<img src="https://providence.listentothedeep.com' + category[1] + '" alt="' + category[0] + '" width="70px"> &nbsp;' + category[0] + '</div>');
-            });
-            // Make categories droppable after they are added to the DOM
-            $(".category").droppable({
+    $.get('https://providence.listentothedeep.com/local/get_categories.php', function (data) {
+        var categories = data.categories;
+        categories.forEach(function (category) {
+            $('#categories').append('<div class="category" data-category="' + category[0] + '">' +
+                '<img src="https://providence.listentothedeep.com' + category[1] + '" alt="' + category[0] + '" width="70px"> &nbsp;' + category[0] + '</div>');
+        });
+
+        $(".category").droppable({
                 over: function(event, ui) {
                     $(this).addClass('over');
                 },
@@ -130,25 +136,53 @@ function loadCategories() {
                     ui.draggable.css({top: 0, left: 0});
                 }
             });
-        });
-    }
-    function loadSpecies() {
-        $.get('https://providence.listentothedeep.com/local/get_species.php', function (data) {
-            var speciesList = data.species_list;
-            speciesList.forEach(function (species) {
-                $('#species').append('<div class="species" data-class-id="' + species.class_id + '">' +
-                    '<i class="fas fa-arrows-alt drag-icon"></i>' +
-                    '<img src="https://providence.listentothedeep.com' + species.image + '" alt="' + species.common_name + '" width="70px"> &nbsp;' + species.common_name + '</div>');
+        // Add click event to categories
+        $(".category").click(function() {
+          
+            var category = $(this).data('category');
+            selectedSpecies.forEach(function(species) {
+                $('div[data-class-id="' + species + '"]').appendTo('div[data-category="' + category + '"]');
             });
-            // Make species draggable after they are added to the DOM
-            $(".species").draggable({
+            selectedSpecies = [];
+            $(".species").removeClass('selected');
+        });
+    });
+}
+
+function loadSpecies() {
+    $.get('https://providence.listentothedeep.com/local/get_species.php', function (data) {
+        var speciesList = data.species_list;
+        speciesList.forEach(function (species) {
+            $('#species').append('<div class="species" data-class-id="' + species.class_id + '">' +
+                '<i class="fas fa-arrows-alt drag-icon"></i>' +
+                '<img src="https://providence.listentothedeep.com' + species.image + '" alt="' + species.common_name + '" width="70px"> &nbsp;' + species.common_name + '</div>');
+        });
+
+                    // Make species draggable after they are added to the DOM
+                    $(".species").draggable({
                 revert: true
             });
+        // Add click event to species
+        $('#species').on('click', '.species', function() {
+
+            var classId = $(this).data('class-id');
+            console.log(classId)
+            if ($(this).hasClass('selected')) {
+                    $(this).removeClass('selected');
+                    selectedSpecies = selectedSpecies.filter(function(id) {
+                        return id !== classId;
+                    });
+                } else {
+                    $(this).toggleClass('selected');
+                    console.log($(this))
+                    selectedSpecies.push(classId);
+                }
         });
-    }
-    loadCategories();
-    loadSpecies();
-/***************************************************************************************************************
+    });
+}
+
+loadCategories();
+loadSpecies();/***************************************************************************************************************
 /***************************************************************************************************************** */
 //Integrate heatmap display based on user-selected parameters
 function displayHeatmap(type, classIds) {
@@ -163,62 +197,40 @@ function displayHeatmap(type, classIds) {
 }
 /****************************************************************************************************************** */
 //Add a slider to select historical maps
-$(document).ready(function () {
-    $('#historySlider').on('input', function () {
-        var selectedTime = $(this).val();
-        // Load the corresponding historical map based on selectedTime
-        loadHistoricalMap(selectedTime);
-    });
-});
+// $(document).ready(function () {
+//     $('#historySlider').on('input', function () {
+//         var selectedTime = $(this).val();
+//         // Load the corresponding historical map based on selectedTime
+//         loadHistoricalMap(selectedTime);
+//     });
+// });
 
-function loadHistoricalMap(time) {
-    // Fetch and display historical map based on the selected time
-    $.get('https://providence.listentothedeep.com/local/get_available_maps.php', { type: 'species', class: selectedClassId }, function (data) {
-        var maps = data.available.maps;
-        var selectedMap = maps[time];
-        if (selectedMap) {
-            $.getJSON(selectedMap.url, function (geojson) {
-                // Clear existing layers and add new geojson layer
-                map.eachLayer(function (layer) {
-                    if (layer instanceof L.GeoJSON) {
-                        map.removeLayer(layer);
-                    }
-                });
-                L.geoJSON(geojson).addTo(map);
-            });
-        }
-    });
-}
+// function loadHistoricalMap(time) {
+//     // Fetch and display historical map based on the selected time
+//     $.get('https://providence.listentothedeep.com/local/get_available_maps.php', { type: 'species', class: selectedClassId }, function (data) {
+//         var maps = data.available.maps;
+//         var selectedMap = maps[time];
+//         if (selectedMap) {
+//             $.getJSON(selectedMap.url, function (geojson) {
+//                 // Clear existing layers and add new geojson layer
+//                 map.eachLayer(function (layer) {
+//                     if (layer instanceof L.GeoJSON) {
+//                         map.removeLayer(layer);
+//                     }
+//                 });
+//                 L.geoJSON(geojson).addTo(map);
+//             });
+//         }
+//     });
+// }
 /************************************************************************************************************************ */
-//Implement dynamic selection and categorization of species:
-$(document).on('click', '.species', function () {
-    var $this = $(this);
-    var classId = $this.data('class-id');
-    if ($this.hasClass('selected')) {
-        $this.removeClass('selected');
-    } else {
-        $this.addClass('selected');
-    }
-});
 
-$(document).on('click', '.category', function () {
-    var selectedSpecies = $('.species.selected');
-    if (selectedSpecies.length + $(this).find('.species').length <= 10) {
-        selectedSpecies.each(function () {
-            var species = $(this).clone();
-            $(this).removeClass('selected');
-            $(this).remove();
-            $(this).appendTo($(this));
-            // Add logic to handle adding species to category
-        });
-    }
-});
 /********************************************************************************** */
 //Show the common name of the species when an icon is clicked
-$(document).on('click', '.species', function () {
-    var commonName = $(this).text();
-    $('#lastSelectedSpecies').text(commonName);
-});
+// $(document).on('click', '.species', function () {
+//     var commonName = $(this).text();
+//     $('#lastSelectedSpecies').text(commonName);
+// });
 </script>
 
 

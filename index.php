@@ -3,19 +3,43 @@
 
 
 <head>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Geojson Map application</title>
 <link rel="stylesheet" href="plugins/boostrap/bootstrap.min.css" />
 <link rel="stylesheet" href="plugins/leaflet/leaflet.css" />
+
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 
 <style>
 
 
 #map { height: 600px; }
- .category, .species { border: 1px solid #ccc; padding: 10px; margin: 5px; }
-        .category { background: #f9f9f9; }
-        .species { background: #fff; }
+.category {
+        width: 200px;
+        border: 1px solid #ccc;
+        margin: 10px;
+        float: left;
+        padding: 10px;
+        transition: border-color 0.3s;
+    }
+    .species {
+        border: 1px solid #ccc;
+        margin: 5px;
+        float: left;
+        padding: 5px;
+        cursor: move;
+        display: flex;
+        align-items: center;
+    }
+    .species .drag-icon {
+        margin-right: 10px;
+    }
+    .category.over {
+        border-color: blue;
+    }
 </style>
 </head>
 <body>
@@ -48,6 +72,7 @@
 <script src="plugins/jquery.js"></script>
 <script src="plugins/boostrap/bootstrap.min.js"></script>
 <script src="plugins/leaflet/leaflet.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 </html>
 
 <script>
@@ -85,47 +110,45 @@ $(document).ready(function () {
 /************************************************************************************************ */
 //Fetch categories and species data from the server
 function loadCategories() {
-    $.get('https://providence.listentothedeep.com/local/get_categories.php', function (data) {
-        var categories = data.categories;
-        categories.forEach(function (category) {
-            $('#categories').append('<div class="category" data-category="' + category[0] + '">' +
-                '<img src="' + category[1] + '" alt="' + category[0] + '">' + category[0] + '</div>');
+        $.get('https://providence.listentothedeep.com/local/get_categories.php', function (data) {
+            var categories = data.categories;
+            categories.forEach(function (category) {
+                $('#categories').append('<div class="category" data-category="' + category[0] + '">' +
+                    '<img src="https://providence.listentothedeep.com' + category[1] + '" alt="' + category[0] + '" width="70px"> &nbsp;' + category[0] + '</div>');
+            });
+            // Make categories droppable after they are added to the DOM
+            $(".category").droppable({
+                over: function(event, ui) {
+                    $(this).addClass('over');
+                },
+                out: function(event, ui) {
+                    $(this).removeClass('over');
+                },
+                drop: function(event, ui) {
+                    $(this).removeClass('over');
+                    $(this).append(ui.draggable);
+                    ui.draggable.css({top: 0, left: 0});
+                }
+            });
         });
-    });
-}
-
-function loadSpecies() {
-    $.get('https://providence.listentothedeep.com/local/get_species.php', function (data) {
-        var speciesList = data.species_list;
-        speciesList.forEach(function (species) {
-            $('#species').append('<div class="species" data-class-id="' + species.class_id + '">' +
-                '<img src="' + species.image + '" alt="' + species.common_name + '">' + species.common_name + '</div>');
+    }
+    function loadSpecies() {
+        $.get('https://providence.listentothedeep.com/local/get_species.php', function (data) {
+            var speciesList = data.species_list;
+            speciesList.forEach(function (species) {
+                $('#species').append('<div class="species" data-class-id="' + species.class_id + '">' +
+                    '<i class="fas fa-arrows-alt drag-icon"></i>' +
+                    '<img src="https://providence.listentothedeep.com' + species.image + '" alt="' + species.common_name + '" width="70px"> &nbsp;' + species.common_name + '</div>');
+            });
+            // Make species draggable after they are added to the DOM
+            $(".species").draggable({
+                revert: true
+            });
         });
-    });
-}
-
-$(document).ready(function () {
+    }
     loadCategories();
     loadSpecies();
-});
-/*************************************************************************************************************** */
-//Enable drag-and-drop functionality to add species to categories
-$(document).ready(function () {
-    $('.species').draggable({
-        helper: 'clone'
-    });
-
-    $('.category').droppable({
-        accept: '.species',
-        drop: function (event, ui) {
-            var species = ui.helper.clone();
-            if ($(this).find('.species').length < 10) {
-                $(this).append(species);
-                // Optional: Add logic to handle species addition to category
-            }
-        }
-    });
-});
+/***************************************************************************************************************
 /***************************************************************************************************************** */
 //Integrate heatmap display based on user-selected parameters
 function displayHeatmap(type, classIds) {

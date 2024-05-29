@@ -74,8 +74,11 @@
                 <div id="controls">
                     <h5>Categories</h5>
                     <div id="categories" class="mb-4"></div>
+                    
+                    <div id="species" >
                     <h5>Species</h5>
-                    <div id="species" ></div>
+                    
+                    </div>
                 </div>
             </div>
         </div>
@@ -135,19 +138,33 @@ function loadCategories() {
                 '<img src="https://providence.listentothedeep.com' + category[1] + '" alt="' + category[0] + '" width="70px"> &nbsp;' + category[0] + '</div>');
         });
 
-        $(".category").droppable({
-                over: function(event, ui) {
-                    $(this).addClass('over');
-                },
-                out: function(event, ui) {
-                    $(this).removeClass('over');
-                },
-                drop: function(event, ui) {
-                    $(this).removeClass('over');
-                    $(this).append(ui.draggable);
-                    ui.draggable.css({top: 0, left: 0});
-                }
-            });
+  // Droppable for categories
+  $(".category").droppable({
+        accept: ".species",
+        over: function(event, ui) {
+            $(this).addClass('over');
+        },
+        out: function(event, ui) {
+            $(this).removeClass('over');
+        },
+        drop: function(event, ui) {
+            $(this).removeClass('over');
+            var $species = ui.draggable;
+            var classId = $species.data('class-id');
+            var $category = $(this);
+            // Check if the category has reached the maximum limit of species
+            if ($category.find('.species').length >= 10) {
+                alert('Maximum species limit reached for this category.');
+                return;
+            }
+            // Append species to category
+            $species.appendTo($category).css({ top: 0, left: 0 });
+            // Add species to data structure
+            speciesCategories[classId] = speciesCategories[classId] || [];
+            speciesCategories[classId].push($category.data('category'));
+        }
+    });
+
         // Add click event to categories
         $(".category").click(function() {
           

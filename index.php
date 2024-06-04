@@ -78,10 +78,7 @@
                 <div id="map"></div>
             </div>
             <div class="col-5">
-                  <div id="controls">
-        <label for="drawSelect">Select Draw Option:</label>
-        <select id="drawSelect"></select>
-    </div>
+       
                 <div>
                     <label>Map Type</label>
                     <select id="map_type" class="form-control">
@@ -126,14 +123,7 @@
             var geojsonLayer;
            
 
-function getPolygonCentroid(coords) {
-    var x = 0, y = 0, n = coords.length;
-    for (var i = 0; i < n; i++) {
-        x += coords[i][0];
-        y += coords[i][1];
-    }
-    return [y / n, x / n]; // Return in [lat, lng] format
-}
+
             function loadGeoJSON(url) {
                 $.getJSON(url, function (data) {
                     console.log(data)
@@ -142,30 +132,9 @@ function getPolygonCentroid(coords) {
                     }
                     geojsonLayer = L.geoJSON(data).addTo(map);
 
-        // Extract heatmap data
-        var heatData = data.features.map(function (feature) {
-            var coords = feature.geometry.coordinates;
-            if (feature.geometry.type === "Point") {
-                return [coords[1], coords[0], feature.properties.intensity || 1];
-            } else if (feature.geometry.type === "Polygon") {
-                var centroid = getPolygonCentroid(coords[0]);
-                return [centroid[0], centroid[1], feature.properties.intensity || 1];
-            } else {
-                console.warn("Unsupported geometry type for heatmap:", feature.geometry.type);
-                return null;
-            }
-        }).filter(function(item) {
-            return item !== null;
-        });
 
-        var heatmap = L.heatLayer(heatData, {
-            radius: 20,
-            blur: 10,
-            gradient: {
-                0.5: 'blue',
-                1: 'red'
-            }
-        }).addTo(map);
+
+     
                     map.fitBounds(geojsonLayer.getBounds());
                 });
             }
